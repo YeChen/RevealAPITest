@@ -87,8 +87,8 @@ def create_project(login_session_id, user_id):
   payload = {
       "projectName": "APITest005",
       "projectDbId": "apitest005",
-      "companyId": 1,
-      "clientId": 1,
+      "companyId": 70, #Company: API, use 1 if we want to test company "Reveal" 
+      "clientId": 84, #ClientName: APIClient, use 1 if we want to test client "Reveal"
       "timezone": "UTC"
   }
 
