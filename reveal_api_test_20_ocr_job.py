@@ -47,10 +47,10 @@ def authenticate(username, password):
     return login_session_id, user_id
 
 # Step 2: read score
-def run_sub_imaging_job(login_session_id):
+def run_sub_ocr_job(login_session_id):
    
     #1844 is case "API_Standard" in consulting
-    imaging_url = baseurl + "/rest/api/v2/1844/jobs/bulkImage"
+    ocr_url = baseurl + "/rest/api/v2/1844/jobs/ocr"
 
     # Headers
     headers = {    
@@ -69,14 +69,16 @@ def run_sub_imaging_job(login_session_id):
     }
 
     # Payload data
-    # submit two items for bulk imaging   
+    # submit two items for OCR   
     payload = {
-        "bulkImageJobCreate":{"alwaysTreatAsColor":"true","blackWhite":"TiffBw300Group4","blackWhiteSafe":"TiffBw300Group4","color":"TiffBw300Group4","luminance":"35","overwrite":"DoNotOverwrite","overwriteOptions":"AllExceptAnnotatedAndRedacted","templateId":"1","unableToDetect":"TiffBw300Group4"},
-        "bulkImageSearch":{"documentSelectionType":"Subset","selectedDocumentItemIds":[2,1],"type":"BulkImage"}
+        "documentSelectionType":"Subset","name":"api-ocr-test-21","documentImageSetId":"0",
+         "generateMissingImages":"true","imagingTemplateId":"1","documentTextSetId":"3",
+         "overwriteExistingText":"false",
+         "selectedDocumentItemIds":[2,1]
     }
 
     # Send POST to create classifier
-    response = requests.post(imaging_url, json=payload, headers=headers)
+    response = requests.post(ocr_url, json=payload, headers=headers)
     response.raise_for_status()  # Raise an error if the request fails
 
     # Parse the response   
@@ -100,7 +102,7 @@ try:
     # case: API_Stantard, ID: 1844
     # fields profile: Hot Document Scores, Field profile ID: 4 
     # read score back, score field: Reveal AI Score - Hot    
-    run_sub_imaging_job(session_id)
+    run_sub_ocr_job(session_id)
 
 except requests.exceptions.RequestException as e:
     print(f"API request failed: {e}")
