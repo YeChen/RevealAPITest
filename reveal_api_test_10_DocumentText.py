@@ -51,7 +51,7 @@ def authenticate(username, password):
 def run_get_text(login_session_id, user_id):
    
     #1374 is case "Enron Summit 2024" in consulting
-    search_url = baseurl + "/rest/api/document?caseId=1844&userId=" + str(user_id);
+    search_url = baseurl + "/rest/api/document?caseId=1982&userId=" + str(user_id);
 
     # Headers
     headers = {    
