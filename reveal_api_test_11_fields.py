@@ -1,12 +1,10 @@
-# This test script is used to test Document Text CRUD functions
+# This test script is used to test fields creation/update 
 # The API used in this test is V1, which will be obsolete and we will need update later
 
 import requests
 import os
 
 # Step 1: setup, retrieve USER and PASSWORD secrets from Colab or os 
-#username = userdata.get("DEMO_USER")
-#password = userdata.get("DEMO_PASSWORD")
 username = 'nexlp'
 password = os.getenv('DEMO_PASSWORD')
 baseurl = "https://consulting.us-east-1.reveal11.cloud"
@@ -47,12 +45,9 @@ def authenticate(username, password):
     print("Authentication successful!")
     return login_session_id, user_id
 
-# Step 3: Define the function to retrieve projects
-def run_get_text(login_session_id, user_id):
+# Step 3: create field
+def create_field(login_session_id, user_id, field_name):
    
-    #1374 is case "Enron Summit 2024" in consulting
-    search_url = baseurl + "/rest/api/document?caseId=1982&userId=" + str(user_id);
-
     # Headers
     headers = {    
       "incontrolauthtoken": login_session_id,
@@ -69,42 +64,63 @@ def run_get_text(login_session_id, user_id):
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"
     }
 
+    #1819 is case "API test" in consulting
+    search_url = baseurl + "/rest/api/v2/1819/fields?includeNotImportable=true&includeSpecial=true&start=0&count=2147483647"
+
     # Payload data
-    payload = {
-        "keyField": "ItemId",
-        "combineDateTimeFields": True,
-        "useFieldNames": True,
-        "fieldProfileName": "Default",
-        "documentIds": [
-            "1"
-        ],
-        "documentFields": [
-            "Body Text"
-        ],
-        "maxTextLength": 0
-    }
+    payload = {}
 
     # Send POST request to retrieve projects
-    response = requests.post(search_url, json=payload, headers=headers)
+    response = requests.get(search_url, json=payload, headers=headers)
     response.raise_for_status()  # Raise an error if the request fails
 
     # Parse the response to get project list
     response_data = response.json()
-    fields_count = sum(len(item.get("fields", [])) for item in response_data)
 
-    if fields_count == 2:
-        print(f"returned " + str(fields_count) + " fields.")
-        print(response_data[0]["fields"][0]["fieldValue"])
+    field_exists = any(result['fieldName'].lower() == field_name.lower() for result in response_data['results'])
+
+    if field_exists: 
+        print(f"field:{field_name} exists, pass creation")
     else:
-        print("Call failed.")
-    
+        #create field 
+        print("create field")
+        search_url = baseurl + "rest/api/v2/1819/fields"
+        payload = {
+            "fieldId": 0,
+            "fieldName": "abc01",
+            "displayName": "abc01",
+            "dataType": "nvarchar",
+            "maxLength": 200,
+            "dataTypeDesc": "aaa",
+            "isTranscriptLookup": True,
+            "isRelationalField": True,
+            "isSearchable": True,
+            "isUpdatable": True,
+            "isProductionUpdatable": True,
+            "isMultiValue": True,
+            "isCustomField": True,
+            "isImportable": True,
+            "isNativeFileField": True,
+            "isSortable": True,
+            "isFacetable": True,
+            "hasExactText": True,
+            "indexed": True,
+            "pinned": True,
+            "stored": True,
+            "type": "Text"
+        }
+        response_data = response.json()
+        if response_data["fieldId"]: 
+            print("field created.")
+          
 # Main Execution
 try:
     # Step 2: Authenticate to get session ID and user ID
     session_id, user_id = authenticate(username, password)
 
     # Step 3: read Body Text back
-    run_get_text(session_id, user_id)
+    fieldname = "entity_per"
+    create_field(session_id, user_id, "fieldname")
 
 except requests.exceptions.RequestException as e:
     print(f"API request failed: {e}")

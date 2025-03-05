@@ -48,10 +48,10 @@ def authenticate(username, password):
     return login_session_id, user_id
 
 # Step 3: Define the function to retrieve projects
-def run_get_text(login_session_id, user_id):
+def read_project(login_session_id, user_id):
    
     #1374 is case "Enron Summit 2024" in consulting
-    search_url = baseurl + "/rest/api/document?caseId=1982&userId=" + str(user_id);
+    search_url = baseurl + "/rest/api/v2/projects/1819?userId=" + str(user_id);
 
     # Headers
     headers = {    
@@ -71,21 +71,10 @@ def run_get_text(login_session_id, user_id):
 
     # Payload data
     payload = {
-        "keyField": "ItemId",
-        "combineDateTimeFields": True,
-        "useFieldNames": True,
-        "fieldProfileName": "Default",
-        "documentIds": [
-            "1"
-        ],
-        "documentFields": [
-            "Body Text"
-        ],
-        "maxTextLength": 0
     }
 
     # Send POST request to retrieve projects
-    response = requests.post(search_url, json=payload, headers=headers)
+    response = requests.get(search_url, json=payload, headers=headers)
     response.raise_for_status()  # Raise an error if the request fails
 
     # Parse the response to get project list
@@ -104,7 +93,7 @@ try:
     session_id, user_id = authenticate(username, password)
 
     # Step 3: read Body Text back
-    run_get_text(session_id, user_id)
+    read_project(session_id, user_id)
 
 except requests.exceptions.RequestException as e:
     print(f"API request failed: {e}")
