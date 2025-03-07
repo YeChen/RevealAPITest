@@ -84,16 +84,16 @@ def create_field(login_session_id, user_id, field_name):
     else:
         #create field 
         print("create field")
-        search_url = baseurl + "rest/api/v2/1819/fields"
+        search_url = baseurl + "/rest/api/v2/1819/fields"
         payload = {
             "fieldId": 0,
-            "fieldName": "abc01",
-            "displayName": "abc01",
+            "fieldName": field_name,
+            "displayName": field_name,
             "dataType": "nvarchar",
-            "maxLength": 200,
-            "dataTypeDesc": "aaa",
-            "isTranscriptLookup": True,
-            "isRelationalField": True,
+            "maxLength": 4000,
+            "dataTypeDesc": "",
+            "isTranscriptLookup": False,
+            "isRelationalField": False,
             "isSearchable": True,
             "isUpdatable": True,
             "isProductionUpdatable": True,
@@ -109,10 +109,15 @@ def create_field(login_session_id, user_id, field_name):
             "stored": True,
             "type": "Text"
         }
+        response = requests.post(search_url, json=payload, headers=headers)
+        response.raise_for_status()  # Raise an error if the request fails
         response_data = response.json()
         if response_data["fieldId"]: 
             print("field created.")
-          
+
+    #update 
+    # URL: https://consulting.us-east-1.reveal11.cloud/rest/api/v2/1819/jobs/bulkTag
+    # {"documentSelectionType":"Subset","selectedDocumentItemIds":[1,2,3,4],"updateFieldsEntry":{"variableSets":[{"fieldId":426,"variables":[{"displayOrder":0,"category":"UserText","value":"aaabbb"}]}],"updateOption":"KeepExisting"}}      
 # Main Execution
 try:
     # Step 2: Authenticate to get session ID and user ID
@@ -120,7 +125,7 @@ try:
 
     # Step 3: read Body Text back
     fieldname = "entity_per"
-    create_field(session_id, user_id, "fieldname")
+    create_field(session_id, user_id, "long_new_01")
 
 except requests.exceptions.RequestException as e:
     print(f"API request failed: {e}")
