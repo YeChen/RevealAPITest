@@ -191,7 +191,21 @@ try:
     # Step 2: create new field  
     field_id = create_field(session_id, fieldname)
 
-    # Step 3:  
+    # Step 3: add field to default profile 
+    # NOTICE!!! field won't read/update if it is not in profile
+    # /api/v2/{caseId}/fieldProfiles/{id}/fields/add
+    #{
+    #"fieldId": 0,
+    #"isVisible": true
+    #}
+
+
+    # Step 4: read field value 
+    # 
+    #https://consulting.us-east-1.reveal11.cloud/rest/api/v2/1819/search
+    #{"documentCriteria":{"start":25,"count":25,"fieldProfileId":1}}
+
+    # Step 5:  
     update_field_value(session_id, field_id, field_value_to_update)
 
 except requests.exceptions.RequestException as e:
