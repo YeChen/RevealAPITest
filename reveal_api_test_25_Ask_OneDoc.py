@@ -69,14 +69,17 @@ def ask_question(login_session_id, case_id, question):
     }
 
     # Payload data 
-    payload = {"sessionId":"","message":{"messageText":question,"messageOwner":"USER", "filters":[{"filter":"{\"type\":\"termIn\",\"fieldName\":\"BEGDOC\",\"values\":[\"DEMO-000001\"],\"exact\":true}","filterType":"Bql"}]},"top":100}
+    #payload = {"sessionId":"","message":{"messageText":question,"messageOwner":"USER", "filters":[{"filter":"{\"type\":\"termIn\",\"fieldName\":\"BEGDOC\",\"values\":[\"DEMO-000001\"],\"exact\":true}","filterType":"Bql"}]},"top":100}
+    #payload = {"sessionId":"","message":{"messageText":"who did Ken Lay talk to?","messageOwner":"USER"},"top":100,"filters":[{"filter":"{\"type\":\"termIn\",\"fieldName\":\"BEGDOC\",\"values\":[\"DEMO-000001\"],\"exact\":true}","filterType":"Bql"}],"requestTracker":{"clientId":"8db9d7ff05875e61b122a84d0f61354feeaad239e2edff4246448599ae57cf73","projectId":"48deb732e8de8fe7995bbc2816520798fcab815f62165af4d53bbc24434c963e","userId":"ea5b27556fbb134def2c2fbf944d9cdda3dbdb6b10473a1aec59f6f170c4ca3a"}}
+    payload = {"sessionId":"","message":{"messageText":"who did Ken Lay talk to?","messageOwner":"USER"},"top":100,"filters":[{"filter":"{\"type\":\"termIn\",\"fieldName\":\"BEGDOC\",\"values\":[\"DEMO-000001\"],\"exact\":true}","filterType":"Bql"}],"requestTracker":{"clientId":"aaabbb","projectId":"cccddd","userId":"eeefff"}}
 
     # Send GET request to retrieve projects
     response = requests.post(ask_url, json=payload, headers=headers)
     response.raise_for_status()  # Raise an error if the request fails
-
+    
     # Parse the response to get project list
     ask_response = response.json()
+    print(str(ask_response))
     ask_session_id = ask_response.get("sessionId", {})
     
     citation_url = baseurl + "/rest/api/v2/" + str(case_id) + "/generativeai/answer/citations"
@@ -100,7 +103,8 @@ try:
     session_id, user_id = authenticate(username, password)
 
     # Step 2: ask a question, print answer
-    ask_question(session_id, 1819, "What is this document about?")
+    #ask_question(session_id, 1819, "What is this document about?")
+    ask_question(session_id, 1819, "Who did Ken Lay talk to?")
 
 except requests.exceptions.RequestException as e:
     print(f"API request failed: {e}")
