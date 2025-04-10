@@ -1,17 +1,22 @@
-# This test script is used to test fields creation/update 
-# The API used in this test is V1, which will be obsolete and we will need update later
+# This test script is used to test fields 
+#  1. creation
+#  2. add to profile 
+#  3. update value (through bulkTag)
+#  4. wait till job finishes, check field value 
+
 import requests
 import os
+import time
 
 # Step 1: setup, retrieve USER and PASSWORD secrets from Colab or os 
 username = 'nexlp'
 password = os.getenv('DEMO_PASSWORD')
-
 baseurl = "https://consulting.us-east-1.reveal11.cloud"
 caseid = 1819  #1819 is case "API test" in consulting
 docids = [1]
-fieldname = "text_field_04"
+fieldname = "TEXT_FIELD_08"
 field_value_to_update = "hello world!"
+default_fieldprofile_id = 1
 
 if not username or not password:
     raise ValueError("Secrets USER and PASSWORD must be set in Colab.")
@@ -128,7 +133,45 @@ def create_field(login_session_id, field_name):
     # URL: https://consulting.us-east-1.reveal11.cloud/rest/api/v2/1819/jobs/bulkTag
     # {"documentSelectionType":"Subset","selectedDocumentItemIds":[1,2,3,4],"updateFieldsEntry":{"variableSets":[{"fieldId":426,"variables":[{"displayOrder":0,"category":"UserText","value":"aaabbb"}]}],"updateOption":"KeepExisting"}}      
 
-# Step 3: update the text field value
+# Step 3: add to default profile
+def add_to_profile(login_session_id, field_id):
+   
+    # Headers
+    headers = {    
+      "incontrolauthtoken": login_session_id,
+      "Accept": "application/json", 
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "en-US,en;q=0.9,zh-TW;q=0.8,zh;q=0.7",
+      "Content-Length": "500",
+      "Content-Type": "application/json-patch+json",
+      "origin": baseurl,
+      "priority": "u=1, i",
+      "referer": baseurl + "/rest/api-docs/index.html?urls.primaryName=v2",
+      "sec-ch-ua":'"Chromium";v="130", "Microsoft Edge";v="130", "Not?A_Brand";v="99"',
+      "sec-ch-ua-platform":"Windows",
+      "sec-fetch-mode": "cors", 
+      "sec-fetch-site": "same-origin",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"
+    }
+
+    #check if the field exists already
+    add_field_url = baseurl + f"/rest/api/v2/{caseid}/fieldProfiles/{default_fieldprofile_id}/fields/add"
+
+    # Payload data  
+    payload = [
+        {
+            "fieldId": field_id,
+            "isVisible": 1
+        }
+    ]
+
+    # Send PUT request 
+    response = requests.put(add_field_url, json=payload, headers=headers)
+    response.raise_for_status()  # Raise an error if the request fails
+
+    print("field added to default profile ")
+
+# Step 4: update the text field value
 def update_field_value(login_session_id, field_id, field_value):
    
     # Headers
@@ -182,7 +225,54 @@ def update_field_value(login_session_id, field_id, field_value):
 
     print("job for update submitted.")
   
+    return response.json()["jobId"]    
 
+# Step 5: read the text field back and confirm it is updated
+def confirm_field_value(login_session_id, job_id):
+   
+    # Headers
+    headers = {    
+      "incontrolauthtoken": login_session_id,
+      "Accept": "application/json"
+    }
+
+    #check if job finished
+    bulktagjob_url = baseurl + f"/rest/api/v2/{caseid}/jobs/bulkTag/{job_id}"
+    response = requests.get(url=bulktagjob_url, headers=headers)
+    response.raise_for_status()  # Raise an error if the request fails
+    jobstatus = response.json()["status"]      
+    trycount = 0 
+    while jobstatus != "Complete" and trycount < 3: 
+        time.sleep(10)
+        trycount += 1
+        response = requests.get(bulktagjob_url, headers=headers)
+        response.raise_for_status()  # Raise an error if the request fails
+        jobstatus = response.json()["status"]       
+
+    if (jobstatus == "Complete"):         
+        search_url = baseurl + f"/rest/api/v2/{caseid}/search"
+        # Payload data
+        payload = {
+            "queryString":"{\"type\":\"advancedBoolean\",\"clauses\":[{\"type\":\"termIn\",\"fieldName\":\"ITEMID\",\"values\":[\"" + f"{docids[0]}" + "\"],\"exact\":true}],\"operations\":[]}",
+            "queryType":"Bql",
+            "documentCriteria":{"start":0,"count":25,"fieldProfileId":default_fieldprofile_id}
+        }
+        # Send GET request to retrieve projects
+        response = requests.post(search_url, json=payload, headers=headers)
+        response.raise_for_status()  # Raise an error if the request fails
+
+        # Parse the response to get project list
+        search_response = response.json()
+        text_found = search_response["documentResults"]["documents"][0]["fields"][fieldname]
+
+        if text_found[0] == field_value_to_update:
+            print("Confirmed the value is set properly.")
+        else:
+            print("failed to confirm the result is saved. field has value: " + text_found)
+    
+    else: 
+        print("Update didn't succeed. Check later.")  
+    
 # Main Execution
 try:
     # Step 1: Authenticate to get session ID and user ID
@@ -193,20 +283,14 @@ try:
 
     # Step 3: add field to default profile 
     # NOTICE!!! field won't read/update if it is not in profile
-    # /api/v2/{caseId}/fieldProfiles/{id}/fields/add
-    #{
-    #"fieldId": 0,
-    #"isVisible": true
-    #}
+    add_to_profile(session_id, field_id) 
 
+    # Step 4:  
+    job_id = update_field_value(session_id, field_id, field_value_to_update)
 
-    # Step 4: read field value 
-    # 
-    #https://consulting.us-east-1.reveal11.cloud/rest/api/v2/1819/search
-    #{"documentCriteria":{"start":25,"count":25,"fieldProfileId":1}}
-
-    # Step 5:  
-    update_field_value(session_id, field_id, field_value_to_update)
+    # Step 5: serach and confirm field value is updated   
+    confirm_field_value(session_id, job_id)
+ 
 
 except requests.exceptions.RequestException as e:
     print(f"API request failed: {e}")
